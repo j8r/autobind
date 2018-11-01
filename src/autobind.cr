@@ -49,9 +49,9 @@ while arg = ARGV[i += 1]?
     else
       abort "library name argument was specified but no value was received."
     end
-  when .match /--module(-name)?=?(\w*)?/
+  when .match /--mod(ule)?(-name)?=?(\w*)?/
     err_str = "module name argument was specified but no value was received."
-    if name = $2?
+    if name = $3?
       mod_name = name
     else
       mod_name = ARGV[i + 1]? || abort err_str
@@ -73,6 +73,15 @@ while arg = ARGV[i += 1]?
     while a fixed value will remove just that:
         --remove-enum-prefix[=true,false,<value>]
         --remove-enum-suffix[=true,false,<value>]
+
+    The resulting library name can be controlled with the --lib-name argument,
+    and it can be wrapped in a parent module with --module-name.
+        --lib-name="LibC"         (the default)
+        --module-name="Library"
+        --mod "Library"           (also ok)
+        --lib "LibC"              (this too)
+    If no module is specified, the resulting code is not wrapped in a parent
+    module. If the library name is not specified, it will be called "LibC".
     EOF
     exit 0
   else
