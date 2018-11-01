@@ -49,7 +49,7 @@ while arg = ARGV[i += 1]?
     else
       abort "library name argument was specified but no value was received."
     end
-  when .matches? /--module(-name)?=?(\w*)?/
+  when .match /--module(-name)?=?(\w*)?/
     err_str = "module name argument was specified but no value was received."
     if name = $2?
       mod_name = name
