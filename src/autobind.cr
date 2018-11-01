@@ -5,6 +5,8 @@ require "./autobind/type"
 cflags = [] of String
 header = nil
 remove_enum_prefix = remove_enum_suffix = false
+lib_name = "LibC"
+mod_name = nil
 
 if arg = ENV["CFLAGS"]?
   cflags += arg.split(' ').reject(&.empty?)
@@ -38,6 +40,21 @@ while arg = ARGV[i += 1]?
     when "", "false" then remove_enum_suffix = false
     when "true"      then remove_enum_suffix = true
     else                  remove_enum_suffix = value
+    end
+  when .match /--lib(-name)?=?(\w*)?/
+    if name = $2?
+      lib_name = name
+    elsif name = ARGV[i + 1]?
+      lib_name = name
+    else
+      abort "library name argument was specified but no value was received."
+    end
+  when .matches? /--module(-name)?=?(\w*)?/
+    err_str = "module name argument was specified but no value was received."
+    if name = $2?
+      mod_name = name
+    else
+      mod_name = ARGV[i + 1]? || abort err_str
     end
   when "--help"
     STDERR.puts <<-EOF
@@ -74,6 +91,8 @@ parser = Autobind::Parser.new(
   cflags,
   remove_enum_prefix: remove_enum_prefix,
   remove_enum_suffix: remove_enum_suffix,
+  name: lib_name,
+  module_name: mod_name # <-- possibly nil
 )
 
 parser.parse

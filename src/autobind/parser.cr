@@ -7,9 +7,18 @@ module Autobind
     protected getter index : Clang::Index
     protected getter translation_unit : Clang::TranslationUnit
     getter output = ""
+    getter name = "LibC"
+    getter? module_name : String? = nil
+
 
     def libc_output
-      "lib LibC\n#{@output}end\n"
+      if mod = module_name?
+        validate_name mod
+        validate_name
+        "module #{mod}\n  lib #{name}\n#{@output}end\nend\n"
+      else
+        "lib LibC\n#{@output}end\n"
+      end
     end
 
     def check
@@ -37,7 +46,9 @@ module Autobind
     def initialize(@header_name : String, args = [] of String,
                    @process : Process = Process::FILE,
                    @remove_enum_prefix = false,
-                   @remove_enum_suffix = false)
+                   @remove_enum_suffix = false,
+                   @name = "LibC",
+                   @module_name = nil)
       # TODO: support C++ (rename input.c to input.cpp)
       # TODO: support local filename (use quotes instead of angle brackets)
       files = [
@@ -389,6 +400,21 @@ module Autobind
     def visit_var(cursor)
       type = Type.to_crystal(cursor.type.canonical_type)
       "  $#{cursor.spelling} : #{type}"
+    end
+
+    def validate_name(n = nil)
+      if n
+        if n =~ /\s/
+          unless n.starts_with? /[A-Z]/
+            raise "\
+              Given #{n} is not a valid library or module name: must not\
+              contain whitespace and must start with a capital letter.\
+              Convention is to use PascalCase."
+          end
+        end
+      else
+        validate_name @name
+      end
     end
   end
 end
