@@ -3,7 +3,7 @@ require "./autobind/parser"
 require "./autobind/type"
 
 cflags = [] of String
-header = nil
+header = ""
 remove_enum_prefix = remove_enum_suffix = false
 lib_name = "LibC"
 mod_name = nil
@@ -31,23 +31,24 @@ and it can be wrapped in a parent module with --module-name.
 If no module is specified, the resulting code is not wrapped in a parent
 module. If the library name is not specified, it will be called "LibC".
 USAGE
+UsageExitCode = 64
 
 if arg = ENV["CFLAGS"]?
   cflags += arg.split(' ').reject(&.empty?)
 end
 
-i = -1
-while arg = ARGV[i += 1]?
-  case arg
+until ARGV.empty?
+  case arg = ARGV.shift
   when "-I", "-D"
-    if value = ARGV[i += 1]?
+    if value = ARGV[1]?
       cflags << value
     else
-      abort "fatal : missing value for #{arg}\n#{Help}"
+      abort "fatal : missing value for #{arg}\n#{Help}", UsageExitCode
     end
   when .starts_with?("-I"), .starts_with?("-D")
     cflags << arg
   when .ends_with?(".h")
+    abort "FATAL: you can only specify one header\n#{Help}", UsageExitCode unless header.empty?
     header = arg
   when "--remove-enum-prefix"
     remove_enum_prefix = true
@@ -66,34 +67,34 @@ while arg = ARGV[i += 1]?
     else                  remove_enum_suffix = value
     end
   when .starts_with? "--lib-name"
+    abort "Only one library name can be specified", UsageExitCode unless lib_name == "LibC"
     if arg.includes? '='
       lib_name = arg[11..-1]
-    elsif name = ARGV[i + 1]?
+    elsif name = ARGV[1]?
       lib_name = name
     else
-      abort "library name argument was specified but no value was received.\n#{Help}"
+      abort "FATAL: library name argument was specified but no value was received.\n#{Help}", UsageExitCode
     end
   when .starts_with? "--parent-module"
-    err_str = "module name argument was specified but no value was received."
+    abort "FATAL: only one module name can be specified", UsageExitCode unless mod_name.nil?
+    err_str = "FATAL: module name argument was specified but no value was received."
     if arg.includes? '='
       mod_name = arg[16..-1]
-      abort err_str + '\n' + Help if mod_name.empty?
+      abort err_str + '\n' + Help, UsageExitCode if mod_name.empty?
     else
-      mod_name = ARGV[i + 1]? || abort err_str + '\n' + Help
+      mod_name = ARGV[1]? || abort err_str + '\n' + Help, UsageExitCode
     end
-  when "--help"
+  when "--help", "-h"
     STDERR.puts Help
     exit 0
   else
-    abort "Unknown option: #{arg}\n#{Help}"
+    abort "FATAL: Unknown option: #{arg}\n#{Help}", UsageExitCode
   end
 end
 
 Clang.default_c_include_directories cflags
 
-unless header
-  abort "fatal : no header to create bindings for.\n#{Help}"
-end
+abort "FATAL: no header to create bindings for.\n#{Help}", UsageExitCode if header.empty?
 
 parser = Autobind::Parser.new(
   header,
@@ -107,4 +108,4 @@ parser = Autobind::Parser.new(
 parser.parse
 puts parser.libc_output
 check = parser.check
-abort "#{check}\n#{Help}" unless check == true
+abort "#{check}" unless check == true

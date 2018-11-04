@@ -10,13 +10,14 @@ module Autobind
     getter name = "LibC"
     getter? module_name : String? = nil
 
-
     def libc_output
-      if mod = module_name?
-        Crystal.format "module #{mod}\n  lib #{name}\n#{@output}end\nend\n"
-      else
-        "lib LibC\n#{@output}end\n"
-      end
+      Crystal.format(
+        if mod = module_name?
+          "module #{mod}\nlib #{name}\n#{@output}end\nend\n"
+        else
+          "lib LibC\n#{@output}end\n"
+        end
+      )
     end
 
     def check

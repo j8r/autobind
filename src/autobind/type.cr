@@ -44,15 +44,11 @@ module Autobind::Type
   end
 
   def self.visit_pointer(type)
-    # pointee = to_crystal(type.pointee_type.canonical_type)
-    pointee = to_crystal(type.pointee_type)
-    "#{pointee}*"
+    "#{to_crystal type.pointee_type}*"
   end
 
   def self.visit_constant_array(type)
-    # element = to_crystal(type.array_element_type.canonical_type)
-    element = to_crystal(type.array_element_type)
-    "StaticArray(#{element}, #{type.array_size})"
+    "StaticArray(#{to_crystal type.array_element_type}, #{type.array_size})"
   end
 
   def self.visit_function_proto(type)
@@ -73,7 +69,6 @@ module Autobind::Type
 
   def self.visit_incomplete_array(type)
     # element_type = Type.to_crystal(type.array_element_type.canonical_type)
-    element_type = Type.to_crystal(type.array_element_type)
-    "#{element_type}*"
+    "#{Type.to_crystal type.array_element_type}*"
   end
 end
