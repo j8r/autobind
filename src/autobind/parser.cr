@@ -26,16 +26,12 @@ module Autobind
       # check syntax
       Crystal::Parser.parse formatted
       formatted
-    rescue err
-      if err.is_a? Crystal::SyntaxException
-        STDERR.puts err
-        STDERR.puts "\
+    rescue err : Crystal::SyntaxException
+      STDERR.puts err
+      STDERR.puts "\
           WARNING: invalid crystal code was generated for #{@header_name}. You \
           will need to edit the generated code before it will run!\n\
           Error: #{err}"
-      else
-        raise err
-      end
       output
     end
 

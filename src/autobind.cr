@@ -31,7 +31,7 @@ and it can be wrapped in a parent module with --module-name.
 If no module is specified, the resulting code is not wrapped in a parent
 module. If the library name is not specified, it will be called "LibC".
 USAGE
-UsageExitCode = 64
+USAGE_EXIT_CODE = 64
 
 if arg = ENV["CFLAGS"]?
   cflags += arg.split(' ').reject(&.empty?)
@@ -43,12 +43,12 @@ until ARGV.empty?
     if value = ARGV[1]?
       cflags << value
     else
-      abort "fatal : missing value for #{arg}\n#{Help}", UsageExitCode
+      abort "fatal : missing value for #{arg}\n#{Help}", USAGE_EXIT_CODE
     end
   when .starts_with?("-I"), .starts_with?("-D")
     cflags << arg
   when .ends_with?(".h")
-    abort "FATAL: you can only specify one header\n#{Help}", UsageExitCode unless header.empty?
+    abort "FATAL: you can only specify one header\n#{Help}", USAGE_EXIT_CODE unless header.empty?
     header = arg
   when "--remove-enum-prefix"
     remove_enum_prefix = true
@@ -67,34 +67,34 @@ until ARGV.empty?
     else                  remove_enum_suffix = value
     end
   when .starts_with? "--lib-name"
-    abort "Only one library name can be specified", UsageExitCode unless lib_name == "LibC"
+    abort "Only one library name can be specified", USAGE_EXIT_CODE unless lib_name == "LibC"
     if arg.includes? '='
       lib_name = arg[11..-1]
     elsif name = ARGV[1]?
       lib_name = name
     else
-      abort "FATAL: library name argument was specified but no value was received.\n#{Help}", UsageExitCode
+      abort "FATAL: library name argument was specified but no value was received.\n#{Help}", USAGE_EXIT_CODE
     end
   when .starts_with? "--parent-module"
-    abort "FATAL: only one module name can be specified", UsageExitCode unless mod_name.nil?
+    abort "FATAL: only one module name can be specified", USAGE_EXIT_CODE unless mod_name.nil?
     err_str = "FATAL: module name argument was specified but no value was received."
     if arg.includes? '='
       mod_name = arg[16..-1]
-      abort err_str + '\n' + Help, UsageExitCode if mod_name.empty?
+      abort err_str + '\n' + Help, USAGE_EXIT_CODE if mod_name.empty?
     else
-      mod_name = ARGV[1]? || abort err_str + '\n' + Help, UsageExitCode
+      mod_name = ARGV[1]? || abort err_str + '\n' + Help, USAGE_EXIT_CODE
     end
   when "--help", "-h"
     STDERR.puts Help
     exit 0
   else
-    abort "FATAL: Unknown option: #{arg}\n#{Help}", UsageExitCode
+    abort "FATAL: Unknown option: #{arg}\n#{Help}", USAGE_EXIT_CODE
   end
 end
 
 Clang.default_c_include_directories cflags
 
-abort "FATAL: no header to create bindings for.\n#{Help}", UsageExitCode if header.empty?
+abort "FATAL: no header to create bindings for.\n#{Help}", USAGE_EXIT_CODE if header.empty?
 
 parser = Autobind::Parser.new(
   header,
@@ -108,4 +108,4 @@ parser = Autobind::Parser.new(
 parser.parse
 puts parser.libc_output
 check = parser.check
-abort "#{check}" unless check == true
+abort check if check != true
