@@ -11,13 +11,32 @@ module Autobind
     getter? module_name : String? = nil
 
     def libc_output
-      Crystal.format(
+      check(
         if mod = module_name?
           "module #{mod}\nlib #{name}\n#{@output}end\nend\n"
         else
           "lib LibC\n#{@output}end\n"
         end
       )
+    end
+
+    private def check(output)
+      # check formatting
+      formatted = Crystal.format output
+      # check syntax
+      Crystal::Parser.parse formatted
+      formatted
+    rescue err
+      if err.is_a? Crystal::SyntaxException
+        STDERR.puts err
+        STDERR.puts "\
+          WARNING: invalid crystal code was generated for #{@header_name}. You \
+          will need to edit the generated code before it will run!\n\
+          Error: #{err}"
+      else
+        raise err
+      end
+      output
     end
 
     def check
