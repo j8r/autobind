@@ -7,6 +7,30 @@ header = nil
 remove_enum_prefix = remove_enum_suffix = false
 lib_name = "LibC"
 mod_name = nil
+Help = <<-USAGE
+usage : c2cr [--help] [options] <header.h>
+
+Some available options are:
+    -I<directory>   Adds directory to search path for include files
+    -D<name>        Adds an implicit #define
+
+In addition, the CFLAGS environment variable will be used, so you may set it
+up before compilation when search directories, defines, and other options
+aren't fixed and can be dynamic.
+
+The following options control how enum constants are cleaned up. By default
+the value is false (no cleanup), whereas true will remove matching patterns,
+while a fixed value will remove just that:
+    --remove-enum-prefix[=true,false,<value>]
+    --remove-enum-suffix[=true,false,<value>]
+
+The resulting library name can be controlled with the --lib-name argument,
+and it can be wrapped in a parent module with --module-name.
+    --lib-name="LibC"         (the default)
+    --parent-module="Library"
+If no module is specified, the resulting code is not wrapped in a parent
+module. If the library name is not specified, it will be called "LibC".
+USAGE
 
 if arg = ENV["CFLAGS"]?
   cflags += arg.split(' ').reject(&.empty?)
@@ -19,7 +43,7 @@ while arg = ARGV[i += 1]?
     if value = ARGV[i += 1]?
       cflags << value
     else
-      abort "fatal : missing value for #{arg}"
+      abort "fatal : missing value for #{arg}\n#{Help}"
     end
   when .starts_with?("-I"), .starts_with?("-D")
     cflags << arg
@@ -41,58 +65,34 @@ while arg = ARGV[i += 1]?
     when "true"      then remove_enum_suffix = true
     else                  remove_enum_suffix = value
     end
-  when .match /--lib(-name)?=?(\w*)?/
-    if name = $2?
-      lib_name = name
+  when .starts_with? "--lib-name"
+    if arg.includes? '='
+      lib_name = arg[11..-1]
     elsif name = ARGV[i + 1]?
       lib_name = name
     else
-      abort "library name argument was specified but no value was received."
+      abort "library name argument was specified but no value was received.\n#{Help}"
     end
-  when .match /--mod(ule)?(-name)?=?(\w*)?/
+  when .starts_with? "--parent-module"
     err_str = "module name argument was specified but no value was received."
-    if name = $3?
-      mod_name = name
+    if arg.includes? '='
+      mod_name = arg[16..-1]
+      abort err_str + '\n' + Help if mod_name.empty?
     else
-      mod_name = ARGV[i + 1]? || abort err_str
+      mod_name = ARGV[i + 1]? || abort err_str + '\n' + Help
     end
   when "--help"
-    STDERR.puts <<-EOF
-    usage : c2cr [--help] [options] <header.h>
-
-    Some available options are:
-        -I<directory>   Adds directory to search path for include files
-        -D<name>        Adds an implicit #define
-
-    In addition, the CFLAGS environment variable will be used, so you may set it
-    up before compilation when search directories, defines, and other options
-    aren't fixed and can be dynamic.
-
-    The following options control how enum constants are cleaned up. By default
-    the value is false (no cleanup), whereas true will remove matching patterns,
-    while a fixed value will remove just that:
-        --remove-enum-prefix[=true,false,<value>]
-        --remove-enum-suffix[=true,false,<value>]
-
-    The resulting library name can be controlled with the --lib-name argument,
-    and it can be wrapped in a parent module with --module-name.
-        --lib-name="LibC"         (the default)
-        --module-name="Library"
-        --mod "Library"           (also ok)
-        --lib "LibC"              (this too)
-    If no module is specified, the resulting code is not wrapped in a parent
-    module. If the library name is not specified, it will be called "LibC".
-    EOF
+    STDERR.puts Help
     exit 0
   else
-    abort "Unknown option: #{arg}"
+    abort "Unknown option: #{arg}\n#{Help}"
   end
 end
 
 Clang.default_c_include_directories cflags
 
 unless header
-  abort "fatal : no header to create bindings for."
+  abort "fatal : no header to create bindings for.\n#{Help}"
 end
 
 parser = Autobind::Parser.new(
@@ -107,4 +107,4 @@ parser = Autobind::Parser.new(
 parser.parse
 puts parser.libc_output
 check = parser.check
-abort check if check != true
+abort "#{check}\n#{Help}" unless check == true
