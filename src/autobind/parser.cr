@@ -398,9 +398,6 @@ module Autobind
     def visit_var(cursor)
       type = Type.to_crystal(cursor.type.canonical_type)
       "  $#{cursor.spelling} : #{type}"
-      else
-        validate_name @name
-      end
     end
   end
 end
