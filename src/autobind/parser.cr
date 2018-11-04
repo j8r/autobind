@@ -13,9 +13,7 @@ module Autobind
 
     def libc_output
       if mod = module_name?
-        validate_name mod
-        validate_name
-        "module #{mod}\n  lib #{name}\n#{@output}end\nend\n"
+        Crystal.format "module #{mod}\n  lib #{name}\n#{@output}end\nend\n"
       else
         "lib LibC\n#{@output}end\n"
       end
@@ -400,18 +398,6 @@ module Autobind
     def visit_var(cursor)
       type = Type.to_crystal(cursor.type.canonical_type)
       "  $#{cursor.spelling} : #{type}"
-    end
-
-    def validate_name(n = nil)
-      if n
-        if n =~ /\s/
-          unless n.starts_with? /[A-Z]/
-            raise "\
-              Given #{n} is not a valid library or module name: must not\
-              contain whitespace and must start with a capital letter.\
-              Convention is to use PascalCase."
-          end
-        end
       else
         validate_name @name
       end
