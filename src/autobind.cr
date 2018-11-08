@@ -8,7 +8,7 @@ remove_enum_prefix = remove_enum_suffix = false
 lib_name = "LibC"
 mod_name = nil
 Help = <<-USAGE
-usage : c2cr [--help] [options] <header.h>
+usage : autobind [--help] [options] <header.h>
 
 Some available options are:
     -I<directory>   Adds directory to search path for include files
@@ -76,7 +76,7 @@ until ARGV.empty?
       abort "FATAL: library name argument was specified but no value was received.\n#{Help}", USAGE_EXIT_CODE
     end
   when .starts_with? "--parent-module"
-    abort "FATAL: only one module name can be specified", USAGE_EXIT_CODE unless mod_name.nil?
+    abort "FATAL: only one module name can be specified", USAGE_EXIT_CODE if mod_name
     err_str = "FATAL: module name argument was specified but no value was received."
     if arg.includes? '='
       mod_name = arg[16..-1]
